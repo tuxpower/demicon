@@ -22,7 +22,7 @@ module "lambda" {
         "s3-object-lambda:Get*",
         "s3-object-lambda:List*"
       ],
-      resources = ["arn:aws:s3:::josegaspar-terraform-state", "arn:aws:s3:::josegaspar-terraform-state/*"]
+      resources = ["arn:aws:s3:::${var.s3_bucket}/*"]
     },
   }
 
