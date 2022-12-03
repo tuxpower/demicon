@@ -7,7 +7,7 @@
 Assuming you have already setup all required AWS credentials, you can test the lambda function with the following command and payload:
 
 ```
-aws lambda invoke --cli-binary-format raw-in-base64-out --function-name demicon --payload '{ "resource": "" }' response.jon
+aws lambda invoke --cli-binary-format raw-in-base64-out --function-name demicon --payload '{ "resource": "", "bucket": "josegaspar-terraform-state", "tfstate": "terraform.tfstate" }' response.jon
 ```
 
 In this case `response.json` will contain all the outputs from terraform since no resource name was provided in the payload:
@@ -19,7 +19,7 @@ In this case `response.json` will contain all the outputs from terraform since n
 The lambda function also accepts the name of a given terraform output to be printed out. In this example we want the name of a ALB:
 
 ```
-aws lambda invoke --cli-binary-format raw-in-base64-out --function-name demicon --payload '{ "resource": "alb_name" }' response.jon
+aws lambda invoke --cli-binary-format raw-in-base64-out --function-name demicon --payload '{ "resource": "alb_name", "bucket": "josegaspar-terraform-state", "tfstate": "terraform.tfstate" }' response.jon
 ```
 
 Response:
