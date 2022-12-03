@@ -2,78 +2,46 @@ resource "random_pet" "this" {
   length = 2
 }
 
-resource "aws_lambda_function" "this" {
-  filename      = "${path.module}/src/my-deployment-package.zip"
+module "lambda" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "~> 4.0"
+
   function_name = "demicon"
-  role          = aws_iam_role.lambda.arn
   handler       = "lambda_function.lambda_handler"
-  layers        = [aws_lambda_layer_version.this.arn]
+  runtime       = "python3.9"
+  timeout       = 60
+  source_path   = "${path.module}/src/"
 
-  source_code_hash = filebase64sha256("${path.module}/src/my-deployment-package.zip")
-
-  runtime = "python3.9"
-  timeout = 60
-}
-
-resource "aws_lambda_layer_version" "this" {
-  filename   = "${path.module}/src/my-deployment-package.zip"
-  layer_name = "demicon"
-
-  compatible_runtimes = ["python3.9"]
-}
-
-resource "aws_iam_role" "lambda" {
-  name = "lambda"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "lambda" {
-  name        = "aws_iam_policy_for_terraform_aws_lambda_role"
-  path        = "/"
-  description = "AWS IAM Policy for managing aws lambda role"
-  policy      = <<EOF
-{
- "Version": "2012-10-17",
- "Statement": [
-   {
-     "Action": [
+  attach_policy_statements = true
+  policy_statements = {
+    s3 = {
+      effect = "Allow",
+      actions = [
         "s3:Get*",
         "s3:List*",
         "s3-object-lambda:Get*",
         "s3-object-lambda:List*"
-     ],
-     "Resource": [
-        "arn:aws:s3:::josegaspar-terraform-state",
-        "arn:aws:s3:::josegaspar-terraform-state/*"
-     ],
-     "Effect": "Allow"
-   }
- ]
-}
-EOF
+      ],
+      resources = ["arn:aws:s3:::josegaspar-terraform-state", "arn:aws:s3:::josegaspar-terraform-state/*"]
+    },
+  }
+
+  layers = [module.lambda_layer_local.lambda_layer_arn]
 }
 
-resource "aws_iam_role_policy_attachment" "lambda" {
-  role       = aws_iam_role.lambda.name
-  policy_arn = aws_iam_policy.lambda.arn
+module "lambda_layer_local" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "~> 4.0"
+
+  create_layer = true
+
+  layer_name          = "layer-local"
+  description         = "My lambda layer (deployed from local)"
+  compatible_runtimes = ["python3.9"]
+
+  create_package         = false
+  local_existing_package = "${path.module}/src/my-deployment-package.zip"
 }
-
-
 
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
