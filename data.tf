@@ -14,7 +14,7 @@ data "aws_subnet" "default" {
 
 data "aws_security_group" "default" {
   filter {
-    name = "vpc-id"
+    name   = "vpc-id"
     values = [data.aws_vpc.selected.id]
   }
 }
